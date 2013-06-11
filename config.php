@@ -24,7 +24,7 @@ $api_simple_key = "YOUR_SIMPLE_KEY";
 
 $base_url = "YOUR_URL";
 
-$sqlite_database = YOUR_DATABASE";
+$sqlite_database = "YOUR_DATABASE";
 
 $GLOBALS['REKOGNITION_ROOT'] = "rekognition/";
 
