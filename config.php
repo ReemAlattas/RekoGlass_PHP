@@ -18,13 +18,13 @@
 
 // TODO: You must configure these fields for the starter project to function.
 // Visit https://developers.google.com/glass/getting-started to learn more
-$api_client_id = "763102212922.apps.googleusercontent.com";
-$api_client_secret = "_gqNWxXSOULd43t06QbpV46I";
-$api_simple_key = "AIzaSyCOgXpI5TMdbNPloBhDGc5Y7dJ5zMB-UXA";
+$api_client_id = "YOUR_API_CLIENT_ID";
+$api_client_secret = "YOUR_CLIENT_SECRET";
+$api_simple_key = "YOUR_SIMPLE_KEY";
 
-$base_url = "https://reko.me/gg";///mirror-quickstart-php";
+$base_url = "YOUR_URL";
 
-$sqlite_database = "/opt/lampp/htdocs/gg/tmp/database.sqlite";
+$sqlite_database = YOUR_DATABASE";
 
 $GLOBALS['REKOGNITION_ROOT'] = "rekognition/";
 
