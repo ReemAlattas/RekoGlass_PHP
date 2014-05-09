@@ -16,9 +16,10 @@
 */
 //  Author: Tianqiang Liu - tqliu@orbe.us
 
-require_once $GLOBALS['REKOGNITION_ROOT'].'config.php';
-require_once $GLOBALS['REKOGNITION_ROOT'].'Rekognition_Parser.php';
-require_once $GLOBALS['REKOGNITION_ROOT'].'Rekognition_GUI.php';
+$REKOGNITION_ROOT = "/data/www/ggtest/rekognition/";
+require_once $REKOGNITION_ROOT.'config.php';
+require_once $REKOGNITION_ROOT.'Rekognition_Parser.php';
+require_once $REKOGNITION_ROOT.'Rekognition_GUI.php';
 
 /**
 * Rekognition API.
@@ -142,7 +143,7 @@ class Rekognition_API {
     }
     $result = '';
     if($request_mode == 1){
-      require_once $GLOBALS['REKOGNITION_ROOT'].'HttpClient.class.php';
+      require_once $REKOGNITION_ROOT.'HttpClient.class.php';
       $parameters = array(
                   'api_key' => self::$api_key_, 
                   'api_secret' => self::$api_secret_, 

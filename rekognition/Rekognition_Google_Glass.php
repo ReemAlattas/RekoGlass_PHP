@@ -65,13 +65,13 @@ class Rekognition_Google_Glass {
    
   public function GetRawImage($item_id, &$img_raw) {
     $image_item = $this->mirror_services_->timeline->get($item_id);
-    $attachments = $image_item['attachments'];
+    $attachments = $image_item->attachments;
     if(count($attachments) <= 0){
       return false;
     }
-    $this->content_type_ = $attachments[0]['contentType'];
-    $image = $this->mirror_services_->timeline_attachments->get($item_id, $attachments[0]['id']);
-    $img_raw = downloadAttachment($item_id, $image);
+    $this->content_type_ = $attachments[0]->contentType;
+    $image = $this->mirror_services_->timeline_attachments->get($item_id, $attachments[0]->id);
+    $img_raw = download_attachment($item_id, $image);
     return true;
   }
   
@@ -95,13 +95,13 @@ class Rekognition_Google_Glass {
       $notification = new Google_NotificationConfig();
       $notification->setLevel("DEFAULT");
       $timeline_item->setNotification($notification);
-      insertTimelineItem($this->mirror_services_, $timeline_item,
+      insert_timeline_item($this->mirror_services_, $timeline_item,
         $this->content_type_, $img_raw);
       return true;
     }
     else {
       $timeline_item->setText("Cannot find attachment.." . $request);
-      insertTimelineItem($this->mirror_services_, $timeline_item,
+      insert_timeline_item($this->mirror_services_, $timeline_item,
         null, null);
       return false;
     }
