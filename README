@@ -1,9 +1,9 @@
-RekoGlassPHP v1.1: Rekognition API (PHP) for Google Glass
+RekoGlassPHP: Rekognition API (PHP) for Google Glass
 -----------------------------------
 
-RekoGlassPHP is an open-source project which enables developers to write new applications that can integrate computer vision technologies into their Google Glass apps. The RekoGlassPHP v1.0 supports Face Detection, Face Reading, and Scene Understanding.
+RekoGlassPHP is an open-source project which enables developers to write new applications that can integrate computer vision technologies into their Google Glass apps. The RekoGlassPHP supports Face Detection, Face Reading, and Scene Understanding.
 
-RekoGlassPHP v1.1 can also be found on Github at https://github.com/orbeus/reko_glass_php; for discussions, there is a forum at http://orbe.us/forum.
+RekoGlassPHP can also be found on Github at https://github.com/orbeus/reko_glass_php; for discussions, there is a forum at http://orbe.us/forum.
 
 Current Version: 1.2
 
