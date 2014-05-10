@@ -23,8 +23,8 @@ require_once 'google-api-php-client/src/contrib/Google_MirrorService.php';
 require_once 'util.php';
 
 //Add By Tianqiang Liu
-require_once 'rekognition/config.php';
-require_once 'rekognition/Rekognition_API.php';
+//require_once 'rekognition/config.php';
+//require_once 'rekognition/Rekognition_API.php';
 
 $client = get_google_api_client();
 
@@ -33,20 +33,18 @@ if (!isset($_SESSION['userid']) || get_credentials($_SESSION['userid']) == null)
   header('Location: ' . $base_url . '/oauth2callback.php');
   exit;
 } else {
+
+  verify_credentials(get_credentials($_SESSION['userid']));
   $client->setAccessToken(get_credentials($_SESSION['userid']));
 }
-
 
 // A glass service for interacting with the Mirror API
 $mirror_service = new Google_MirrorService($client);
 
 // But first, handle POST data from the form (if there is any)
-
-
 switch ($_POST['operation']) {
-  case "insertItem":
+  case 'insertItem':
     $new_timeline_item = new Google_TimelineItem();
-    
     $new_timeline_item->setText($_POST['message']);
 
     $notification = new Google_NotificationConfig();
@@ -54,15 +52,15 @@ switch ($_POST['operation']) {
     $new_timeline_item->setNotification($notification);
 
     if (isset($_POST['imageUrl']) && isset($_POST['contentType'])) {
-      insertTimelineItem($mirror_service, $new_timeline_item,
+      insert_timeline_item($mirror_service, $new_timeline_item,
         $_POST['contentType'], file_get_contents($_POST['imageUrl']));
     } else {
-      insertTimelineItem($mirror_service, $new_timeline_item, null, null);
+      insert_timeline_item($mirror_service, $new_timeline_item, null, null);
     }
 
     $message = "Timeline Item inserted!";
     break;
-  case "insertItemWithAction":
+  case 'insertItemWithAction':
     $new_timeline_item = new Google_TimelineItem();
     $new_timeline_item->setText("What did you have for lunch?");
 
@@ -70,37 +68,41 @@ switch ($_POST['operation']) {
     $notification->setLevel("DEFAULT");
     $new_timeline_item->setNotification($notification);
 
-    $menuItems = array();
+    $menu_items = array();
 
     // A couple of built in menu items
-    $menuItem = new Google_MenuItem();
-    $menuItem->setAction("READ_ALOUD");
-    array_push($menuItems, $menuItem);
+    $menu_item = new Google_MenuItem();
+    $menu_item->setAction("REPLY");
+    array_push($menu_items, $menu_item);
+
+    $menu_item = new Google_MenuItem();
+    $menu_item->setAction("READ_ALOUD");
+    array_push($menu_items, $menu_item);
     $new_timeline_item->setSpeakableText("What did you eat? Bacon?");
 
-    $menuItem = new Google_MenuItem();
-    $menuItem->setAction("SHARE");
-    array_push($menuItems, $menuItem);
+    $menu_item = new Google_MenuItem();
+    $menu_item->setAction("SHARE");
+    array_push($menu_items, $menu_item);
 
     // A custom menu item
-    $customMenuItem = new Google_MenuItem();
-    $customMenuValue = new Google_MenuValue();
-    $customMenuValue->setDisplayName("Drill Into");
-    $customMenuValue->setIconUrl($service_base_url . "/static/images/drill.png");
+    $custom_menu_item = new Google_MenuItem();
+    $custom_menu_value = new Google_MenuValue();
+    $custom_menu_value->setDisplayName("Drill Into");
+    $custom_menu_value->setIconUrl($service_base_url . "/static/images/drill.png");
 
-    $customMenuItem->setValues(array($customMenuValue));
-    $customMenuItem->setAction("CUSTOM");
+    $custom_menu_item->setValues(array($custom_menu_value));
+    $custom_menu_item->setAction("CUSTOM");
     // This is how you identify it on the notification ping
-    $customMenuItem->setId("safe-for-later");
-    array_push($menuItems, $customMenuItem);
+    $custom_menu_item->setId("safe-for-later");
+    array_push($menu_items, $custom_menu_item);
 
-    $new_timeline_item->setMenuItems($menuItems);
+    $new_timeline_item->setMenuItems($menu_items);
 
-    insertTimelineItem($mirror_service, $new_timeline_item, null, null);
+    insert_timeline_item($mirror_service, $new_timeline_item, null, null);
 
     $message = "Inserted a timeline item you can reply to";
     break;
-  case "insertTimelineAllUsers":
+  case 'insertTimelineAllUsers':
     $credentials = list_credentials();
     if (count($credentials) > 10) {
       $message = "Found " . count($credentials) . " users. Aborting to save your quota.";
@@ -114,26 +116,30 @@ switch ($_POST['operation']) {
 
         $user_specific_mirror_service = new Google_MirrorService($user_specific_client);
 
-        insertTimelineItem($user_specific_mirror_service, $new_timeline_item, null, null);
+        insert_timeline_item($user_specific_mirror_service, $new_timeline_item, null, null);
       }
       $message = "Sent a cat fact to " . count($credentials) . " users.";
     }
     break;
-  case "insertSubscription":
-    $message = subscribeToNotifications($mirror_service, $_POST['subscriptionId'],
+  case 'insertSubscription':
+    $message = subscribe_to_notifications($mirror_service, $_POST['subscriptionId'],
       $_SESSION['userid'], $base_url . "/notify.php");
     break;
-  case "deleteSubscription":
+  case 'deleteSubscription':
     $message = $mirror_service->subscriptions->delete($_POST['subscriptionId']);
     break;
-  case "insertContact":
-    insertContact($mirror_service, $_POST['id'], $_POST['name'],
+  case 'insertContact':
+    insert_contact($mirror_service, $_POST['id'], $_POST['name'],
         $base_url . "/static/images/chipotle-tube-640x360.jpg");
     $message = "Contact inserted. Enable it on MyGlass.";
     break;
-  case "deleteContact":
-    deleteContact($mirror_service, $_POST['id']);
+  case 'deleteContact':
+    delete_contact($mirror_service, $_POST['id']);
     $message = "Contact deleted.";
+    break;
+  case 'deleteTimelineItem':
+    delete_timeline_item($mirror_service, $_POST['itemId']);
+    $message = "A timeline item has been deleted.";
     break;
 }
 
@@ -146,13 +152,13 @@ try {
   $contact = null;
 }
 $subscriptions = $mirror_service->subscriptions->listSubscriptions();
-$timelineSubscriptionExists = false;
-$locationSubscriptionExists = false;
-foreach ($subscriptions['items'] as $subscription) {
-  if ($subscription['id'] == 'timeline') {
-    $timelineSubscriptionExists = true;
-  } elseif ($subscription['id'] == 'location') {
-    $locationSubscriptionExists = true;
+$timeline_subscription_exists = false;
+$location_subscription_exists = false;
+foreach ($subscriptions->getItems() as $subscription) {
+  if ($subscription->getId() == 'timeline') {
+    $timeline_subscription_exists = true;
+  } elseif ($subscription->getId() == 'locations') {
+    $location_subscription_exists = true;
   }
 }
 
@@ -163,65 +169,86 @@ foreach ($subscriptions['items'] as $subscription) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Glassware Starter Project</title>
   <link href="./static/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
-  <style>
-    .button-icon { max-width: 75px; }
-    .tile {
-      border-left: 1px solid #444;
-      padding: 5px;
-      list-style: none;
-    }
-    .btn { width: 100%; }
-  </style>
+  <link href="./static/bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet" media="screen">
+  <link href="./static/main.css" rel="stylesheet" media="screen">
 </head>
 <body>
 <div class="navbar navbar-inverse navbar-fixed-top">
   <div class="navbar-inner">
     <div class="container">
       <a class="brand" href="#">Glassware Starter Project: PHP Edition</a>
-      <div class="nav-collapse collapse">
-        <form class="navbar-form pull-right" action="signout.php" method="post">
-          <button type="submit" class="btn">Sign out</button>
-        </form>
-      </div>
     </div>
   </div>
 </div>
 
 <div class="container">
 
-  <div class="hero-unit">
-    <h1>Your Recent Timeline</h1>
-    <?php if ($message != "") { ?>
-    <span class="label label-warning">Message: <?= $message ?> </span>
-    <?php } ?>
+  <?php if ($message != "") { ?>
+  <div class="alert alert-info"><?php echo $message; ?> </div>
+  <?php } ?>
+
+  <h1>Your Recent Timeline</h1>
+  <div class="row">
 
     <div style="margin-top: 5px;">
-      <?php foreach ($timeline['items'] as $timeline_item) { ?>
-      <ul class="span3 tile">
-        <li><strong>ID: </strong> <?= $timeline_item['id'] ?>
-        </li>
-        <li>
-          <strong>Text: </strong> <?= $timeline_item['text'] ?>
-        </li>
-        <li>
-          <strong>Attachments: </strong>
-          <?php
-          if (isset($timeline_item['attachments'])) {
-            $attachments = $timeline_item['attachments'];
-            foreach ($attachments as $attachment) { ?>
-                <img src="<?= $base_url .
-                    '/attachment-proxy.php?timeline_item_id='.
-                    $timeline_item['id'].'&attachment_id='.$attachment['id'] ?>" />
-            <?php
-            }
-          }
-          ?>
-        </li>
-
-      </ul>
-      <?php } ?>
+      <?php if ($timeline->getItems()) { ?>
+        <?php foreach ($timeline->getItems() as $timeline_item) { ?>
+        <div class="span4">
+          <table class="table table-bordered">
+            <tbody>
+              <tr>
+                <th>ID</th>
+                <td><?php echo $timeline_item->getId(); ?></td>
+              </tr>
+              <tr>
+                <th>Text</th>
+                <td><?php echo htmlspecialchars($timeline_item->getText()); ?></td>
+              </tr>
+              <tr>
+                <th>HTML</th>
+                <td><?php echo htmlspecialchars($timeline_item->getHtml()); ?></td>
+              </tr>
+              <tr>
+                <th>Attachments</th>
+                <td>
+                  <?php
+                  if ($timeline_item->getAttachments() != null) {
+                    $attachments = $timeline_item->getAttachments();
+                    foreach ($attachments as $attachment) { ?>
+                        <img src="<?php echo $base_url .
+                            '/attachment-proxy.php?timeline_item_id=' .
+                            $timeline_item->getId() . '&attachment_id=' .
+                            $attachment->getId() ?>" />
+                    <?php
+                    }
+                  }
+                  ?>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2">
+                  <form class="form-inline" method="post">
+                    <input type="hidden" name="itemId" value="<?php echo $timeline_item->getId(); ?>">
+                    <input type="hidden" name="operation" value="deleteTimelineItem">
+                    <button class="btn btn-danger btn-block" type="submit">Delete Item</button>
+                  </form>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <?php 
+        }
+      } else { ?>
+      <div class="span12">
+        <div class="alert alert-info">
+          You haven't added any items to your timeline yet. Use the controls
+          below to add something!
+        </div>
+      </div>
+      <?php
+      } ?>
     </div>
-    <div style="clear:both;"></div>
   </div>
 
   <div class="row">
@@ -231,36 +258,41 @@ foreach ($subscriptions['items'] as $subscription) {
       <p>When you first sign in, this Glassware inserts a welcome message. Use
         these controls to insert more items into your timeline. Learn more about
         the timeline APIs
-        <a href="https://developers.google.com/glass/timeline">here</a></p>
+        <a href="https://developers.google.com/glass/timeline">here</a>.</p>
 
 
       <form method="post">
         <input type="hidden" name="operation" value="insertItem">
-        <textarea name="message">Hello World!</textarea><br/>
-        <button class="btn" type="submit">The above message</button>
+        <textarea name="message" class="span4">Hello World!</textarea><br/>
+        <button class="btn btn-block" type="submit">
+          Insert the above message
+        </button>
       </form>
 
       <form method="post">
         <input type="hidden" name="operation" value="insertItem">
-        <input type="hidden" name="message"
-               value="Chipotle says hi!">
-        <input type="hidden" name="imageUrl" value="<?= $base_url .
+        <input type="hidden" name="message" value="Chipotle says hi!">
+        <input type="hidden" name="imageUrl" value="<?php echo $base_url .
             "/static/images/chipotle-tube-640x360.jpg" ?>">
         <input type="hidden" name="contentType" value="image/jpeg">
 
-        <button class="btn" type="submit">A picture
-          <img class="button-icon" src="<?= $base_url .
+        <button class="btn btn-block" type="submit">Insert a picture
+          <img class="button-icon" src="<?php echo $base_url .
              "/static/images/chipotle-tube-640x360.jpg" ?>">
         </button>
       </form>
       <form method="post">
         <input type="hidden" name="operation" value="insertItemWithAction">
-        <button class="btn" type="submit">A card you can reply to</button>
+        <button class="btn btn-block" type="submit">
+          Insert a card you can reply to
+        </button>
       </form>
       <hr>
       <form method="post">
         <input type="hidden" name="operation" value="insertTimelineAllUsers">
-        <button class="btn" type="submit">A card to all users</button>
+        <button class="btn btn-block" type="submit">
+          Insert a card to all users
+        </button>
       </form>
     </div>
 
@@ -271,21 +303,25 @@ foreach ($subscriptions['items'] as $subscription) {
       <a href="https://developers.google.com/glass/contacts">here</a>.</p>
 
       <?php if ($contact == null) { ?>
-      <form class="span3"method="post">
+      <form method="post">
         <input type="hidden" name="operation" value="insertContact">
-        <input type="hidden" name="iconUrl" value="<?= $base_url .
+        <input type="hidden" name="iconUrl" value="<?php echo $base_url .
             "/static/images/chipotle-tube-640x360.jpg" ?>">
-        <input type="hidden" name="name" value="PHP Quick Start">
+        <input type="hidden" name="name" value="PHP Quick Start11">
         <input type="hidden" name="id" value="php-quick-start">
-        <button class="btn" type="submit">Insert PHP Quick Start Contact</button>
+        <button class="btn btn-block btn-success" type="submit">
+          Insert PHP Quick Start Contact
+        </button>
       </form>
       <?php } else { ?>
-      <form class="span3" method="post">
+      <form method="post">
         <input type="hidden" name="operation" value="deleteContact">
         <input type="hidden" name="id" value="php-quick-start">
-        <button class="btn" type="submit">Delete PHP Quick Start Contact</button>
+        <button class="btn btn-block btn-danger" type="submit">
+          Delete PHP Quick Start Contact
+        </button>
       </form>
-    <? } ?>
+    <?php } ?>
     </div>
 
     <div class="span4">
@@ -293,38 +329,45 @@ foreach ($subscriptions['items'] as $subscription) {
 
   <p>By default a subscription is inserted for changes to the
     <code>timeline</code> collection. Learn more about subscriptions
-    <a href="https://developers.google.com/glass/subscriptions">here</a></p>
+    <a href="https://developers.google.com/glass/subscriptions">here</a>.</p>
 
-  <p class="label label-info">Note: Subscriptions require SSL. <br>They will
-    not work on localhost.</p>
+  <div class="alert alert-info">
+    Note: Subscriptions require SSL. They will not work on localhost.
+  </div>
 
-  <?php if ($timelineSubscriptionExists) { ?>
+  <?php if ($timeline_subscription_exists) { ?>
     <form method="post">
       <input type="hidden" name="subscriptionId" value="timeline">
       <input type="hidden" name="operation" value="deleteSubscription">
-      <button class="btn" type="submit">Unsubscribe from
-        timeline updates</button>
+      <button class="btn btn-block btn-danger" type="submit">
+        Unsubscribe from timeline updates
+      </button>
     </form>
-  <? } else { ?>
+  <?php } else { ?>
     <form method="post">
       <input type="hidden" name="operation" value="insertSubscription">
       <input type="hidden" name="subscriptionId" value="timeline">
-      <button class="btn" type="submit">Subscribe to timeline updates</button>
+      <button class="btn btn-block btn-success" type="submit">
+        Subscribe to timeline updates
+      </button>
     </form>
   <?php } ?>
 
-  <?php if ($locationSubscriptionExists) { ?>
+  <?php if ($location_subscription_exists) { ?>
     <form method="post">
-      <input type="hidden" name="subscriptionId" value="location">
+      <input type="hidden" name="subscriptionId" value="locations">
       <input type="hidden" name="operation" value="deleteSubscription">
-      <button class="btn" type="submit">Unsubscribe from
-        location updates</button>
+      <button class="btn btn-block btn-danger" type="submit">
+        Unsubscribe from location updates
+      </button>
     </form>
   <?php } else { ?>
     <form method="post">
       <input type="hidden" name="operation" value="insertSubscription">
       <input type="hidden" name="subscriptionId" value="locations">
-      <button class="btn" type="submit">Subscribe to location updates</button>
+      <button class="btn btn-block btn-success" type="submit">
+        Subscribe to location updates
+      </button>
     </form>
   <?php } ?>
     </div>

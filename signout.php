@@ -14,15 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//  Author: Jenny Murphy - http://google.com/+JennyMurphy
-
-// TODO: You must configure these fields for the starter project to function.
-// Visit https://developers.google.com/glass/getting-started to learn more
-$api_client_id = "MIRROR_API_CLIENT_ID";
-$api_client_secret = "MIRROR_API_CLIENT_SECRET";
-$api_simple_key = "MIRROR_API_SIMPLE_KEY";
-
-$base_url = "https://www.example.com/YOUR_GLASS_PROJECT_FOLDER";
-
-// This should be writable by your web server's user
-$sqlite_database = "tmp/database.sqlite";
+require_once 'config.php';
+session_start();
+session_destroy();
+?>
+You have been signed out. <a href="<?php echo $base_url ?>">Sign back in</a>
